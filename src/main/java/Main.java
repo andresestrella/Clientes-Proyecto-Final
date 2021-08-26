@@ -11,6 +11,7 @@ public class Main {
         String nombreUsuario;
         String clave;
         String url;
+        String token = null;
         int opcion;
         do{
             System.out.println("Menu:\n" +
@@ -32,13 +33,13 @@ public class Main {
                     nombreUsuario = sc.next();
                     System.out.println("Ingrese la contraseña del usuario: ");
                     clave = sc.next();
-                    iniciarSesion(nombreUsuario,clave);
+                    token = iniciarSesion(nombreUsuario,clave);
                     break;
 
                 case 3:
                     System.out.println("Ingrese la URL: ");
                     url = sc.next();
-                    registrarUrl(url);
+                    registrarUrl(url,token);
                     break;
 
                 default :
@@ -56,22 +57,28 @@ public class Main {
         System.out.println(urlGet);
     }
 
-    public static void iniciarSesion(String nombreUsuario, String clave) {
-        HttpResponse<JsonNode> loginPOST = Unirest.post("http://localhost:7000/api-rest/login")
+    public static String iniciarSesion(String nombreUsuario, String clave) {
+        HttpResponse<String> loginPOST = Unirest.post("http://localhost:7000/api-rest/login")
                 .header("accept", "application/json")
                 .queryString("nombreUsuario", nombreUsuario)
                 .queryString("password", clave)
-                .asJson();
-        System.out.println("STATUS: " + loginPOST.getStatus());
+                .asString();
+
+        System.out.println(loginPOST.getBody());
+        return loginPOST.getBody();
     }
 
-    public static void registrarUrl(String url){
-        HttpResponse<JsonNode> registrarPOST = Unirest.post("http://localhost:7000/api-rest/url")
+    public static void registrarUrl(String url, String token){
+        URL urlResponse = Unirest.post("http://localhost:7000/api-rest/url")
                 .header("accept", "application/json")
                 .queryString("url", url)
-                .asJson();
-        System.out.println("STATUS: " + registrarPOST.getStatus());
-        System.out.println(registrarPOST.getBody().toString());
+                .header("Authorization", "Bearer " + token)
+                .asObject(URL.class)
+                .getBody();
+        System.out.println("\nURL registrada correctamente");
+        System.out.println("URL acortado: "+urlResponse.getDireccionAcortada()
+        +"\n URL original: "+ urlResponse.getOrigen()+ "\n cantidad de visitas: "+ urlResponse.getClientes() + "\n Preview (imagen codificada B64): "
+        + urlResponse.B64preview.substring(0,30)+"...\n\n");
     }
 
 }
